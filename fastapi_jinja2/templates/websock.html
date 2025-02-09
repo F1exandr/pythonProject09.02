@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat</title>
+    <style>
+
+        #onlineUsers {
+            list-style-type: none;
+            padding: 0;
+        }
+        .user-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        .status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: green;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Chat {{id}}</h1>
+    <h2>Online Users</h2>
+    <ul id="onlineUsers"></ul>
+    <h2>Send Message</h2>
+    <form action="" onsubmit="sendMessage(event)">
+        <input type="text" id="recipientId" placeholder="User  ID" autocomplete="off" required />
+        <input type="text" id="messageText" placeholder="Message" autocomplete="off" required />
+        <button>Send</button>
+    </form>
+    <ul id='messages'></ul>
+    <script>
+        var ws = new WebSocket("ws://localhost:8000/ws/{{ id }}");
+
+        ws.onmessage = function(event) {
+            var messages = document.getElementById('messages');
+            var message = document.createElement('li');
+            var content = document.createTextNode(event.data);
+            message.appendChild(content);
+            messages.appendChild(message);
+
+
+            if (event.data.startsWith("ONLINE_USERS:")) {
+                var onlineUsers = event.data.split(":")[1].split(",");
+                var onlineUsersList = document.getElementById('onlineUsers');
+                onlineUsersList.innerHTML = "";
+                onlineUsers.forEach(function(username) {
+                    var userItem = document.createElement('li');
+                    userItem.className = 'user-item';
+
+                    var status = document.createElement('div');
+                    status.className = 'status';
+
+                    var userNameText = document.createTextNode(username);
+                    userItem.appendChild(status);
+                    userItem.appendChild(userNameText);
+                    onlineUsersList.appendChild(userItem);
+                });
+            }
+        };
+
+        function sendMessage(event) {
+            var input = document.getElementById("messageText");
+            var recipientId = document.getElementById("recipientId").value;
+            ws.send(recipientId + '_' + input.value);
+            input.value = '';
+            event.preventDefault();
+        }
+    </script>
+</body>
+</html>
